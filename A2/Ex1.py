@@ -137,35 +137,19 @@ def find_solution_at_next_timestep(
     return spsolve(LHS_matrix, RHS_vector)[None].T
 
 
-def main():
-    tau = 0.01
-    h = 0.01
-    cell_boundaries = build_uniform_grid_boundaries(h)
-    cell_centers, h_values = get_cell_centers_and_h_values_from_cell_boundaries(
-        cell_boundaries
-    )
-    previous_solution = u_init_for_vectors(cell_centers)
-
-    def update_tau():
-        return
-
-    end_time = 0.1
-    current_time = 0
-    while current_time < end_time:
-        update_tau()
-        if current_time + tau > end_time:
-            break
-
-        current_time += tau
-        previous_solution = find_solution_at_next_timestep(
-            previous_solution, h_values, tau
-        )
+def plot_solution(
+    cell_centers: np.ndarray,
+    solution: np.ndarray,
+    tau: float,
+    h: float,
+    current_time: float,
+) -> None:
     plt.figure()
     plt.xticks(np.arange(0, 1, 0.2)[1:])
     plt.yticks(np.arange(0, 2, 0.5))
     plt.ylim((0, 2))
     plt.grid(True)
-    plt.plot(cell_centers.T[0], previous_solution.T[0])
+    plt.plot(cell_centers.T[0], solution.T[0])
     plt.title(
         "Solution at t="
         + str(round(current_time, 2))
@@ -177,11 +161,29 @@ def main():
     plt.show()
 
 
-# x_values = np.linspace(0, 1, 100)
-# y_values = u_init_for_vectors(x_values)
-# print(y_values)
-# plt.figure()
-# plt.plot(x_values, y_values)
-# plt.show()
+def main():
+    tau = 0.01
+    h = 0.01
+    end_time = 0.1
+    cell_boundaries = build_uniform_grid_boundaries(h)
+    cell_centers, h_values = get_cell_centers_and_h_values_from_cell_boundaries(
+        cell_boundaries
+    )
+    previous_solution = u_init_for_vectors(cell_centers)
+
+    def update_tau():
+        return
+
+    current_time = 0
+    while current_time < end_time:
+        update_tau()
+        if current_time + tau > end_time:
+            break
+
+        current_time += tau
+        previous_solution = find_solution_at_next_timestep(
+            previous_solution, h_values, tau
+        )
+    plot_solution(cell_centers, previous_solution, tau, h, current_time)
 
 main()
