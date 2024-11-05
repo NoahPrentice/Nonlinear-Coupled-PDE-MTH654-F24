@@ -46,11 +46,11 @@ def u_init_for_vectors(x: np.ndarray) -> np.ndarray:
     return y
 
 
-def build_uniform_grid_boundaries(number_of_cells: int) -> np.ndarray:
+def build_uniform_grid_boundaries(step_size: float) -> np.ndarray:
     """Takes a desired number of elements in the spatial discretization of [0, 1] and
     returns a length number_of_cells + 1 "column vector" (np.ndarray with 1 column) of
     uniformly distributed x values within that range."""
-    return np.linspace(0, 1, num=number_of_cells)[None].T
+    return np.arange(0, 1, step_size)[None].T
 
 
 def get_cell_centers_and_h_values_from_cell_boundaries(
@@ -98,7 +98,7 @@ def build_LHS_matrix(h_values: np.ndarray, tau: float):
     # Interior cells
     for j in range(1, number_of_cells - 1):
         LHS_matrix[j, j - 1] = -tau * transmissibility_vector[j - 1][0]
-        LHS_matrix[j, j] = tau * (
+        LHS_matrix[j, j] = h_values[j] + tau * (
             transmissibility_vector[j - 1][0] + transmissibility_vector[j][0]
         )
         LHS_matrix[j, j + 1] = -tau * transmissibility_vector[j][0]
@@ -132,21 +132,19 @@ def find_solution_at_next_timestep(
     h_values: np.ndarray,
     tau: float,
 ) -> np.ndarray:
-    LHS_matrix = build_LHS_matrix(h_values, tau)
+    LHS_matrix = sparse.csr_matrix(build_LHS_matrix(h_values, tau))
     RHS_vector = build_RHS_vector(h_values, tau, previous_solution)
     return spsolve(LHS_matrix, RHS_vector)[None].T
 
 
 def main():
-    cell_boundaries = build_uniform_grid_boundaries(40)
+    tau = 0.01
+    h = 0.01
+    cell_boundaries = build_uniform_grid_boundaries(h)
     cell_centers, h_values = get_cell_centers_and_h_values_from_cell_boundaries(
         cell_boundaries
     )
     previous_solution = u_init_for_vectors(cell_centers)
-    plt.figure()
-    plt.plot(cell_centers, previous_solution)
-    plt.show()
-    tau = 0.01
 
     def update_tau():
         return
@@ -162,10 +160,22 @@ def main():
         previous_solution = find_solution_at_next_timestep(
             previous_solution, h_values, tau
         )
-        print(previous_solution)
-        plt.figure()
-        plt.plot(cell_centers.T[0], previous_solution.T[0])
-        plt.show()
+    plt.figure()
+    plt.xticks(np.arange(0, 1, 0.2)[1:])
+    plt.yticks(np.arange(0, 2, 0.5))
+    plt.ylim((0, 2))
+    plt.grid(True)
+    plt.plot(cell_centers.T[0], previous_solution.T[0])
+    plt.title(
+        "Solution at t="
+        + str(round(current_time, 2))
+        + r" $\tau$="
+        + str(tau)
+        + " h="
+        + str(h)
+    )
+    plt.show()
+
 
 # x_values = np.linspace(0, 1, 100)
 # y_values = u_init_for_vectors(x_values)
