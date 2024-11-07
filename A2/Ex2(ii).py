@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from time import perf_counter_ns
 
 tau = 0.025
 a = 1
@@ -21,10 +22,6 @@ def g(t: float) -> float:
     return -math.sin(4 * t)
 
 
-def get_v_from_previous_values() -> float:
-    return v_prev - c * tau * (v_prev - u_prev)
-
-
 def F(x: float) -> float:
     return (
         x
@@ -39,6 +36,10 @@ def F_prime(x: float) -> float:
     return 1 + 3 * a * tau * math.pow(x, 2)
 
 
+def get_v_from_previous_values() -> float:
+    return v_prev - c * tau * (v_prev - u_prev)
+
+
 def one_newton_iteration(last_iterate: float) -> float:
     correction = -F(last_iterate) / F_prime(last_iterate)
     return last_iterate + correction
@@ -49,9 +50,11 @@ def plot_u_and_v() -> None:
     plt.plot(times, u_values, color="r", label="u")
     plt.plot(times, v_values, color="b", linestyle="--", label="v")
     plt.legend()
+    plt.title("Partially explicit solutions")
     plt.show()
 
 
+start = perf_counter_ns()
 while current_time < end_time:
     if current_time + tau > end_time:
         break
@@ -66,4 +69,6 @@ while current_time < end_time:
     times.append(current_time)
     u_values.append(u_prev)
     v_values.append(v_prev)
+end = perf_counter_ns()
+print(end - start)
 plot_u_and_v()

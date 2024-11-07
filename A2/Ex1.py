@@ -5,6 +5,12 @@ from scipy import sparse
 from scipy.sparse.linalg import spsolve
 import matplotlib.pyplot as plt
 
+tau = 0.01
+h = 0.01
+end_time = 0.1
+current_time = 0
+k = 3
+
 
 def reaction_function(u: float) -> float:
     """The nonlinear reaction function f(u) = u - u^3."""
@@ -76,7 +82,7 @@ def get_cell_centers_and_h_values_from_cell_boundaries(
 def build_k_vector(dimension: int) -> np.ndarray:
     """Builds the vector of conductivity values (called k or epsilon in HW). Here we are
     taking these to be 1 uniformly."""
-    return np.ones((dimension, 1))
+    return np.ones((dimension, 1)) * k
 
 
 def build_transmissibility_vector(h_values: np.ndarray) -> np.ndarray:
@@ -90,23 +96,33 @@ def build_transmissibility_vector(h_values: np.ndarray) -> np.ndarray:
     return transmissibility_vector
 
 
-def build_LHS_matrix(h_values: np.ndarray, tau: float):
+def build_LHS_matrix(h_values: np.ndarray):
+    """Builds the sparse matrix A that results from putting the fully-discrete equations
+    into matrix-vector form AU = F.
+    """
+
+    # Note that, in ELLIPTIC1d.m, what I call "transmissibility_vector" is called "tx,"
+    # and what I call "number_of_cells" is called "nxdx."
     transmissibility_vector = build_transmissibility_vector(h_values)
     number_of_cells = h_values.size
     LHS_matrix = sparse.lil_array((number_of_cells, number_of_cells))
 
-    # Interior cells
+    # --- Interior cells ---
     for j in range(1, number_of_cells - 1):
         LHS_matrix[j, j - 1] = -tau * transmissibility_vector[j - 1][0]
+
         LHS_matrix[j, j] = h_values[j] + tau * (
             transmissibility_vector[j - 1][0] + transmissibility_vector[j][0]
         )
+
         LHS_matrix[j, j + 1] = -tau * transmissibility_vector[j][0]
 
-    # Boundary cells
+    # --- Boundary cells ---
+    # First cell, index 0
     LHS_matrix[0, 0] = h_values[0] + tau * transmissibility_vector[1]
     LHS_matrix[0, 1] = -tau * transmissibility_vector[1]
 
+    # Last cell, index number_of_cells - 1 = M - 1.
     last_cell_index = number_of_cells - 1
     LHS_matrix[last_cell_index, last_cell_index - 1] = (
         -tau * transmissibility_vector[last_cell_index - 1]
@@ -120,7 +136,10 @@ def build_LHS_matrix(h_values: np.ndarray, tau: float):
 def build_RHS_vector(
     h_values: np.ndarray, tau: float, previous_solution: np.ndarray
 ) -> np.ndarray:
-    RHS_vector = reaction_function_for_vectors(previous_solution)
+    """Builds the column vector F that results from putting the fully-discrete equations
+    in matrix-vector form AU = F.
+    """
+    RHS_vector = reaction_function_for_vectors(previous_solution)  # f(u) in Pbm. 1
     RHS_vector *= tau
     RHS_vector += previous_solution
     RHS_vector *= h_values
@@ -128,22 +147,18 @@ def build_RHS_vector(
 
 
 def find_solution_at_next_timestep(
-    previous_solution: np.ndarray,
-    h_values: np.ndarray,
-    tau: float,
+    previous_solution: np.ndarray, h_values: np.ndarray
 ) -> np.ndarray:
-    LHS_matrix = sparse.csr_matrix(build_LHS_matrix(h_values, tau))
+    LHS_matrix = sparse.csr_matrix(build_LHS_matrix(h_values))
     RHS_vector = build_RHS_vector(h_values, tau, previous_solution)
     return spsolve(LHS_matrix, RHS_vector)[None].T
 
 
-def plot_solution(
-    cell_centers: np.ndarray,
-    solution: np.ndarray,
-    tau: float,
-    h: float,
-    current_time: float,
-) -> None:
+def update_tau():
+    return
+
+
+def plot_solution(cell_centers: np.ndarray, solution: np.ndarray) -> None:
     plt.figure()
     plt.xticks(np.arange(0, 1, 0.2)[1:])
     plt.yticks(np.arange(0, 2, 0.5))
@@ -157,33 +172,24 @@ def plot_solution(
         + str(tau)
         + " h="
         + str(h)
+        + " k="
+        + str(k)
     )
     plt.show()
 
 
-def main():
-    tau = 0.01
-    h = 0.01
-    end_time = 0.1
-    cell_boundaries = build_uniform_grid_boundaries(h)
-    cell_centers, h_values = get_cell_centers_and_h_values_from_cell_boundaries(
-        cell_boundaries
-    )
-    previous_solution = u_init_for_vectors(cell_centers)
+cell_boundaries = build_uniform_grid_boundaries(h)
+cell_centers, h_values = get_cell_centers_and_h_values_from_cell_boundaries(
+    cell_boundaries
+)
+previous_solution = u_init_for_vectors(cell_centers)
 
-    def update_tau():
-        return
+# --- Time Stepping ---
+while current_time < end_time:
+    update_tau()
+    if current_time + tau > end_time:
+        break
 
-    current_time = 0
-    while current_time < end_time:
-        update_tau()
-        if current_time + tau > end_time:
-            break
-
-        current_time += tau
-        previous_solution = find_solution_at_next_timestep(
-            previous_solution, h_values, tau
-        )
-    plot_solution(cell_centers, previous_solution, tau, h, current_time)
-
-main()
+    current_time += tau
+    previous_solution = find_solution_at_next_timestep(previous_solution, h_values)
+plot_solution(cell_centers, previous_solution)

@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from time import perf_counter_ns
 
 tau = 0.025
 a = 1
@@ -54,8 +55,11 @@ def plot_u_and_v() -> None:
     plt.plot(times, u_values, color="r", label="u")
     plt.plot(times, v_values, color="b", linestyle="--", label="v")
     plt.legend()
+    plt.title("Fully implicit solutions")
     plt.show()
 
+start = perf_counter_ns()
+# --- Time Stepping ---
 while current_time < end_time:
     if current_time + tau > end_time:
         break
@@ -70,4 +74,6 @@ while current_time < end_time:
     times.append(current_time)
     u_values.append(u_prev)
     v_values.append(v_prev)
+end = perf_counter_ns()
+print(end - start)
 plot_u_and_v()
