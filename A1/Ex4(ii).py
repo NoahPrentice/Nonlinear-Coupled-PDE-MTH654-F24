@@ -55,7 +55,7 @@ def exfun_for_vectors(vector: np.ndarray) -> np.ndarray:
 def ELLIPTIC1d_with_reaction(
     nxdx, bcond, ifexact, ifplot=1, ifdemo=0, c=1
 ) -> tuple[list[float], list[float]]:
-    """1d finite volume solution to linear diffusion equation -(ku_x)_x = f(x) on (a, b).
+    """1d finite volume solution to linear diffusion equation cu-(ku_x)_x = f(x) on (a, b).
 
     Parameters:
         nxdx: either nx (number of cells) or x position of grid nodes.

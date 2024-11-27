@@ -52,20 +52,26 @@ def build_diffusion_matrix(dimension: int) -> sparse.lil_array:
 
     return diffusion_matrix
 
+def get_cell_centers_and_h_values_from_grid(grid: list[float]) -> tuple[np.ndarray]:
+    grid_size = len(grid)
+    cell_boundaries = np.array(grid)[None].T
+    h_values = np.diff(cell_boundaries, axis=0)
+    cell_centers = cell_boundaries[:grid_size] + 0.5 * h_values
+    return (cell_centers, h_values)
 
 def build_rhs_vector(grid: list[float], tau: float) -> np.ndarray:
-    grid_size = len(grid)
-    cell_endpoints = np.array(grid)[None].T
-    h_values = np.diff(cell_endpoints, axis=0)
-    cell_centers = cell_endpoints[:grid_size] + 0.5 * h_values
-
+    cell_centers, h_values = get_cell_centers_and_h_values_from_grid(grid)
     rhs_vector = rhs_fun_for_vectors(cell_centers)
     rhs_vector *= tau
-    rhs_vector += np.square(h_values)
+    rhs_vector *= np.square(h_values)
     return rhs_vector
+
+
+def build_lhs_matrix(grid: list[float], tau: float, eps: float) -> sparse.lil_array:
+    return
 
 
 def find_solution_at_next_timestep(
     previous_solution: np.ndarray, grid: list[float], tau: float, eps: float
-):
+) -> np.ndarray:
     return
