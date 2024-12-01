@@ -12,6 +12,21 @@ def calculate_total_quantity(
     return quantity
 
 
+def check_quantity_loss(
+    initial_quantity: float, current_quantity: np.ndarray, time: float, iteration: int
+) -> bool:
+    if abs(current_quantity - initial_quantity) < 0.0001:
+        return True
+
+    print(
+        "The loss in the quantity surpassed 10^-4 at time "
+        + str(time)
+        + ", on iteration #"
+        + str(iteration + 1)
+    )
+    return False
+
+
 def setup_plotting(solution: np.ndarray) -> tuple[plt.Figure, plt.Axes]:
     plt.ion()
     fig, ax = plt.subplots()

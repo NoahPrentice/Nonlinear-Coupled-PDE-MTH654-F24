@@ -71,7 +71,7 @@ def transport2d(
     final_time: float,
     nx: int,
     ny: int,
-    show_plot: int = 0,
+    plot_frequency: int = 0,
     compute_quantity_loss: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Numerically solves the 2D transport problem: Given Omega = (-1, 1)^2, find
@@ -92,7 +92,7 @@ def transport2d(
         initial_quantity = calculate_total_quantity(
             previous_solution, x_widths, y_widths
         )
-    if show_plot > 0:
+    if plot_frequency > 0:
         fig, ax = setup_plotting(previous_solution)
 
     while current_time < final_time:
@@ -108,23 +108,18 @@ def transport2d(
         )
 
         if compute_quantity_loss:
-            current_quantity = calculate_total_quantity(
-                previous_solution, x_widths, y_widths
+            current_quantity = calculate_total_quantity(previous_solution)
+            compute_quantity_loss = check_quantity_loss(
+                initial_quantity, current_quantity, current_time, iteration
             )
-            if abs(current_quantity - initial_quantity) > 0.0001:
-                print(
-                    "The loss in the quantity surpassed 10^-4 at time "
-                    + str(current_time)
-                )
-                compute_quantity_loss = False
-        if show_plot > 0 and iteration % show_plot == 0:
+        if plot_frequency > 0 and iteration % plot_frequency == 0:
             plot_next_solution(previous_solution, current_time, fig, ax)
 
         if current_time >= final_time:
             break
         iteration += 1
 
-    if show_plot > 0:
+    if plot_frequency > 0:
         plt.ioff()
         plt.show()
     return (times, previous_solution)
