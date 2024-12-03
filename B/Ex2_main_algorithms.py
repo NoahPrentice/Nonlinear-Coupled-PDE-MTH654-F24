@@ -16,30 +16,34 @@ def find_tau_from_CFL(
 
     nx = up_down_velocities.shape[0]
     ny = left_right_velocities.shape[1]
-    uvx = np.zeros((nx, ny))
-    uvy = np.zeros((nx, ny))
+    left_right_velocities_at_centers = np.zeros((nx, ny))
+    up_down_velocities_at_centers = np.zeros((nx, ny))
 
     for i in range(nx):
-        uvx[i, :] = 0.5 * (
+        left_right_velocities_at_centers[i, :] = 0.5 * (
             left_right_velocities[i, :] + left_right_velocities[i + 1, :]
         )
     for j in range(ny):
-        uvy[:, j] = 0.5 * (up_down_velocities[:, j] + up_down_velocities[:, j + 1])
-    umag = np.sqrt(np.square(uvx) + np.square(uvy))
+        up_down_velocities_at_centers[:, j] = 0.5 * (
+            up_down_velocities[:, j] + up_down_velocities[:, j + 1]
+        )
+    speeds_at_centers = np.sqrt(
+        np.square(left_right_velocities_at_centers)
+        + np.square(up_down_velocities_at_centers)
+    )
 
     vccof = np.ones((nx, ny))
     for i in range(nx):
         for j in range(ny):
             vccof[i, j] *= x_widths[i] * y_widths[j]
-    datcfl = vccof / umag
+    datcfl = np.divide(vccof, speeds_at_centers)
     dtcfl = np.min(datcfl)
 
     if initial_tau > 0:
-        print(min(0.5 * dtcfl, initial_tau))
-        # return min(0.5 * dtcfl, initial_tau)
-        return 0.0069
-    print(dtcfl)
-    return dtcfl  # Maybe should be 0.5 * dtcfl?
+        print("Time step is chosen by CFL as " + str(min(0.5 * dtcfl, initial_tau)))
+        return min(0.5 * dtcfl, initial_tau)
+    print("Time step is chosen by CFL as " + str(0.5 * dtcfl))
+    return 0.5 * dtcfl
 
 
 def find_solution_at_next_timestep(
@@ -108,7 +112,9 @@ def transport2d(
         )
 
         if compute_quantity_loss:
-            current_quantity = calculate_total_quantity(previous_solution)
+            current_quantity = calculate_total_quantity(
+                previous_solution, x_widths, y_widths
+            )
             compute_quantity_loss = check_quantity_loss(
                 initial_quantity, current_quantity, current_time, iteration
             )

@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 def exact_velocity(x: float, y: float) -> tuple[float, float]:
     """Returns q(x, y) as defined by the problem."""
-    return (-1, -1)
+    # return (-1, -1) # For part (i)
+    return (y, -x)  # For part (ii)
 
 
 def build_1d_uniform_grid(
@@ -67,15 +68,14 @@ def build_left_right_fluxes(
     x_boundaries: np.ndarray, y_boundaries: np.ndarray, previous_solution: np.ndarray
 ) -> np.ndarray:
     left_right_fluxes = build_left_right_velocities(x_boundaries, y_boundaries)
-    for i in range(left_right_fluxes.shape[0] - 1):
+    for i in range(left_right_fluxes.shape[0]):
         for j in range(left_right_fluxes.shape[1]):
             if left_right_fluxes[i, j] >= 0 and i - 1 >= 0:
                 left_right_fluxes[i, j] *= previous_solution[i - 1, j]
-            elif left_right_fluxes[i, j] <= 0:
+            elif left_right_fluxes[i, j] <= 0 and i + 1 < left_right_fluxes.shape[0]:
                 left_right_fluxes[i, j] *= previous_solution[i, j]
             else:  # Inflow boundary
                 left_right_fluxes[i, j] = 0
-    left_right_fluxes[-1, :] = 0
     return left_right_fluxes
 
 
@@ -84,12 +84,11 @@ def build_up_down_fluxes(
 ) -> np.ndarray:
     up_down_fluxes = build_up_down_velocities(x_boundaries, y_boundaries)
     for i in range(up_down_fluxes.shape[0]):
-        for j in range(up_down_fluxes.shape[1] - 1):
+        for j in range(up_down_fluxes.shape[1]):
             if up_down_fluxes[i, j] >= 0 and j - 1 >= 0:
                 up_down_fluxes[i, j] *= previous_solution[i, j - 1]
-            elif up_down_fluxes[i, j] <= 0:
+            elif up_down_fluxes[i, j] <= 0 and j + 1 < up_down_fluxes.shape[1]:
                 up_down_fluxes[i, j] *= previous_solution[i, j]
             else:  # Inflow boundary
                 up_down_fluxes[i, j] = 0
-    up_down_fluxes[:, -1] = 0
     return up_down_fluxes
